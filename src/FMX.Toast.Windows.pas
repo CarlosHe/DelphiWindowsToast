@@ -92,32 +92,19 @@ type
     { published declarations }
     property Align;
     property Anchors;
-    property AutoHide;
-    property ClipChildren;
     property ClipParent;
     property Cursor;
     property DisableMouseWheel;
-    property DragMode;
-    property Enabled;
-    property EnableDragHighlight;
     property Height;
-    property HelpContext;
-    property HelpKeyword;
-    property HelpType;
-    property HitTest;
     property Locked;
     property Margins;
     property Opacity;
     property Padding;
-    property PopupMenu;
     property Position;
     property RotationAngle;
     property RotationCenter;
     property Scale;
     property Size;
-    property StyleLookup;
-    property TabOrder;
-    property TabStop;
     property TouchTargetExpansion;
     property Visible;
     property Width;
@@ -149,7 +136,9 @@ begin
   Width := 300;
   Height := 30;
 
-  FBackgroundSize:= TSize.Create(270,30);
+  FBackgroundSize := TSize.Create(270, 30);
+
+  HitTest := False;
 end;
 
 destructor TWindowsToast.Destroy;
@@ -178,11 +167,12 @@ var
   FillTextRect: TRectF;
 begin
   inherited;
-  FillTextRect := TRectF.Create(Width/2-FBackgroundSize.Width/2, 15, Width/2+FBackgroundSize.Width/2, FBackgroundSize.Height - 15);
+  FillTextRect := TRectF.Create(Width / 2 - FBackgroundSize.Width / 2, 15, Width / 2 + FBackgroundSize.Width / 2, FBackgroundSize.Height - 15);
   // Desenha primeiro o fundo...
   Canvas.Fill.Assign(FFillBackground);
-  Canvas.FillRect(TRectF.Create(Width/2-FBackgroundSize.Width/2 , 0, Width/2+FBackgroundSize.Width/2, FBackgroundSize.Height), FBackgroundSize.Height / 2, FBackgroundSize.Height / 2, [TCorner.TopLeft, TCorner.TopRight, TCorner.BottomLeft,
-    TCorner.BottomRight], Opacity, TCornerType.Round);
+  Canvas.FillRect(TRectF.Create(Width / 2 - FBackgroundSize.Width / 2, 0, Width / 2 + FBackgroundSize.Width / 2, FBackgroundSize.Height),
+    FBackgroundSize.Height / 2, FBackgroundSize.Height / 2, [TCorner.TopLeft, TCorner.TopRight, TCorner.BottomLeft, TCorner.BottomRight], Opacity,
+    TCornerType.Round);
   // Depois desenha o texto...
   Canvas.Fill.Assign(FFillText);
   Canvas.FillText(FillTextRect, FText, True, Opacity * 0.87 / 1, [], TTextAlign.Center, TTextAlign.Leading);
@@ -198,7 +188,7 @@ begin
   Canvas.Font.Assign(FFont);
   Canvas.MeasureText(MeasureTextRect, FText, True, [], TTextAlign.Center, TTextAlign.Leading);
   FBackgroundSize.Height := Round(MeasureTextRect.Height) + 30;
-  Height:=FBackgroundSize.Height;
+  Height := FBackgroundSize.Height;
   if MeasureTextRect.Width < 250 then
     FBackgroundSize.Width := Round(MeasureTextRect.Width) + 30;
 end;
@@ -287,6 +277,10 @@ begin
   inherited;
   ShowScrollBars := False;
   FToastList := TObjectList<TWindowsToast>.Create;
+  HitTest := False;
+  Content.Locked := True;
+  Content.Enabled := False;
+  Enabled := False;
 end;
 
 procedure TWindowsToastDialog.Paint;
@@ -314,10 +308,10 @@ procedure TWindowsToastDialog.DoFinishToast(Sender: TObject);
 var
   LWindowsToast: TWindowsToast;
 begin
-  LWindowsToast:= Sender as TWindowsToast;
-  LWindowsToast.Parent:=nil;
+  LWindowsToast := Sender as TWindowsToast;
+  LWindowsToast.Parent := nil;
   FToastList.Remove(LWindowsToast);
-  //Self.Content.Repaint;
+  // Self.Content.Repaint;
 end;
 
 procedure TWindowsToastDialog.DoUpdateAniCalculations(const AAniCalculations: TScrollCalculations);
@@ -334,9 +328,7 @@ end;
 procedure TWindowsToastDialog.MakeText(AText: string; const ADuration: TWindowsToastDuration; ABackgroundColor, ATextColor: TAlphaColor);
 var
   LWindowsToast: TWindowsToast;
-
 begin
-
   LWindowsToast := TWindowsToast.Create(nil);
   FToastList.Add(LWindowsToast);
   Content.AddObject(LWindowsToast);
@@ -347,11 +339,11 @@ begin
   LWindowsToast.Text := AText;
   LWindowsToast.Duration := ADuration;
   LWindowsToast.OnFinishToast := DoFinishToast;
-  LWindowsToast.Margins.Bottom:=5;
+  LWindowsToast.Margins.Bottom := 5;
 
   // LWindowsToast.Position.Y := Self.Content.Height - LWindowsToast.Height - (30);
   LWindowsToast.Position.X := Self.Content.Width / 2 - LWindowsToast.Width / 2;
-  LWindowsToast.Position.Y:=Content.Width;
+  LWindowsToast.Position.Y := Content.Width;
   LWindowsToast.Align := TAlignLayout.Bottom;
   LWindowsToast.Start;
 
