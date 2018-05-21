@@ -150,7 +150,8 @@ begin
   FFloatAnimationOpacity.Free;
   if IsStarted then
   begin
-     FThreadDuration.Terminate;
+      FThreadDuration.Terminate;
+    FreeAndNil(FThreadDuration);
   end;
   inherited;
 end;
@@ -280,7 +281,7 @@ begin
         end);
 
     end);
-
+  FThreadDuration.FreeOnTerminate := False;
   FThreadDuration.Start;
 end;
 
