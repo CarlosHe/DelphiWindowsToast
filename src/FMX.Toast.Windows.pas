@@ -5,7 +5,7 @@ interface
 uses
   System.SysUtils, System.Classes, System.Types, System.UITypes, FMX.Types, FMX.TextLayout,
   FMX.Controls, FMX.Graphics, FMX.Ani, FMX.Forms, FMX.Layouts,
-  System.Generics.Collections;
+  System.Generics.Collections, DateUtils;
 
 type
   TWindowsToastDuration = (ToastDurationLengthShort, ToastDurationLengthLong);
@@ -21,6 +21,7 @@ type
     FOnFinishToast: TNotifyEvent;
     FIsStarted: Boolean;
     FDuration: TWindowsToastDuration;
+    FThreadDuration: TThread;
     procedure SetText(const Value: String);
     procedure SetFillText(const Value: TBrush);
     procedure SetFillBackground(const Value: TBrush);
@@ -147,6 +148,10 @@ begin
   FFillText.Free;
   FFillBackground.Free;
   FFloatAnimationOpacity.Free;
+  if IsStarted then
+  begin
+     FThreadDuration.Terminate;
+  end;
   inherited;
 end;
 
@@ -170,9 +175,9 @@ begin
   FillTextRect := TRectF.Create(Width / 2 - FBackgroundSize.Width / 2, 15, Width / 2 + FBackgroundSize.Width / 2, FBackgroundSize.Height - 15);
   // Desenha primeiro o fundo...
   Canvas.Fill.Assign(FFillBackground);
-  Canvas.FillRect(TRectF.Create(Width / 2 - FBackgroundSize.Width / 2, 0, Width / 2 + FBackgroundSize.Width / 2, FBackgroundSize.Height),
-    FBackgroundSize.Height / 2, FBackgroundSize.Height / 2, [TCorner.TopLeft, TCorner.TopRight, TCorner.BottomLeft, TCorner.BottomRight], Opacity,
-    TCornerType.Round);
+  Canvas.FillRect(TRectF.Create((Width / 2 - FBackgroundSize.Width / 2) - 15, 0, (Width / 2 + FBackgroundSize.Width / 2) + 15,
+    FBackgroundSize.Height), FBackgroundSize.Height / 2, FBackgroundSize.Height / 2, [TCorner.TopLeft, TCorner.TopRight, TCorner.BottomLeft,
+    TCorner.BottomRight], Opacity, TCornerType.Round);
   // Depois desenha o texto...
   Canvas.Fill.Assign(FFillText);
   Canvas.FillText(FillTextRect, FText, True, Opacity * 0.87 / 1, [], TTextAlign.Center, TTextAlign.Leading);
@@ -229,8 +234,6 @@ begin
 end;
 
 procedure TWindowsToast.Start;
-var
-  LThreadDuration: TThread;
 begin
   FIsStarted := True;
   FFloatAnimationOpacity.PropertyName := 'Opacity';
@@ -238,8 +241,11 @@ begin
   FFloatAnimationOpacity.StartValue := 0;
   FFloatAnimationOpacity.StopValue := 1;
 
-  LThreadDuration := TThread.CreateAnonymousThread(
+  FThreadDuration := TThread.CreateAnonymousThread(
     procedure
+    var
+      LDateTime: TDateTime;
+      LNow: TDateTime;
     begin
 
       TThread.Synchronize(nil,
@@ -247,12 +253,20 @@ begin
         begin
           FFloatAnimationOpacity.Enabled := True;
         end);
+      LDateTime := Now();
+      LNow := Now();
 
       case FDuration of
         ToastDurationLengthShort:
-          TThread.Sleep(3000);
+          while (SecondsBetween(LNow, LDateTime) <= 3) and (not FThreadDuration.CheckTerminated) do
+          begin
+            LNow := Now();
+          end;
         ToastDurationLengthLong:
-          TThread.Sleep(6000);
+          while (SecondsBetween(LNow, LDateTime) <= 6) and (not FThreadDuration.CheckTerminated) do
+          begin
+            LNow := Now();
+          end;
       end;
 
       TThread.Synchronize(nil,
@@ -267,7 +281,7 @@ begin
 
     end);
 
-  LThreadDuration.Start;
+  FThreadDuration.Start;
 end;
 
 { TWindowsToastDialog }
@@ -292,6 +306,8 @@ end;
 
 destructor TWindowsToastDialog.Destroy;
 begin
+  FToastList.Clear;
+  FreeAndNil(FToastList);
   inherited;
 end;
 
