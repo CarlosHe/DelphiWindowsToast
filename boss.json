@@ -1,0 +1,11 @@
+{
+	"name": "DelphiWindowsToast",
+	"description": "",
+	"version": "1.0.0",
+	"homepage": "",
+	"mainsrc": "src/",
+	"projects": [
+		"WindowsToast.dproj"
+	],
+	"dependencies": {}
+}
