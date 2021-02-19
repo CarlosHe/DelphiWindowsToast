@@ -262,11 +262,13 @@ begin
           while (SecondsBetween(LNow, LDateTime) <= 3) and (not FThreadDuration.CheckTerminated) do
           begin
             LNow := Now();
+            Sleep(100);
           end;
         ToastDurationLengthLong:
           while (SecondsBetween(LNow, LDateTime) <= 6) and (not FThreadDuration.CheckTerminated) do
           begin
             LNow := Now();
+            Sleep(100);
           end;
       end;
 
